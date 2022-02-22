@@ -1,0 +1,416 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+```{r echo=FALSE}
+suppressPackageStartupMessages(
+  library(tidyverse, quietly=TRUE, warn.conflicts=FALSE)
+)
+library(scales, quietly=TRUE, warn.conflicts=FALSE)
+library(FinCal, quietly=TRUE, warn.conflicts=FALSE)
+library(repr, quietly=TRUE, warn.conflicts=FALSE)
+```
+
+# How Expensive a House Can I Afford?
+
+This notebook provides a way to estimate the price of the most expensive house we can afford as a function of two factors: the maximum monthly amount we can spend on housing and/or total debt (according to industry guidelines) and the amount of cash available for a down payment.
+
+## Input Data
+
+### The 28/36 Rule
+
+According to the [28/36/rule](https://www.investopedia.com/terms/t/twenty-eight-thirty-six-rule.asp), a household should spend a maximum of 28% of its gross monthly income on total housing expenses and no more than 36% on total debt service, including housing and other debt such as car loans and credit cards. Lenders often use this rule to assess whether to extend credit to borrowers.
+
+We take note of those numbers:
+
+```{r, echo=FALSE}
+guidelines <- tribble(
+  ~category, ~ratio,
+  "housing", 0.28,
+  "debt",    0.36
+)
+knitr::kable(guidelines)
+```
+
+### Gross Income
+
+```{r echo=FALSE}
+income <- tribble(
+  ~person,  ~source,     ~amount,
+  "steven", "retirement", (1666.50 + 400 + 4599.50) * 12,
+  "steven", "jpl",        100000,
+  "diane",  "opm",         50712,
+  "diane",  "ss",          19800
+)
+knitr::kable(mutate(income, amount = dollar(amount)), align = "llr")
+```
+
+### Non-Housing Monthly Debt Service
+
+```{r echo = FALSE}
+other_debt_service <- tribble(
+  ~loan,    ~payment,
+  "fedloan",    2000,
+)
+knitr::kable(mutate(other_debt_service, payment = dollar(payment)), align = "lr")
+```
+
+### Current Mortgage Balances
+
+```{r echo = FALSE}
+current_mortgages <- tribble(
+  ~lender,   ~balance,
+  # "fairway",   606274,
+  # "cefcu heloc", 59953,
+)
+#knitr::kable(mutate(current_mortgages, balance = dollar(balance)), align="lr")
+```
+
+### Cash Savings
+
+```{r echo = FALSE}
+savings <- tribble(
+  ~asset,    ~balance,
+  "CEFCU Share", 363915.04,
+  "Escrow", 25000,
+  "Wells Fargo", 18654.77,
+  "United Visa", -41279.41,
+  # "savings", 100000,
+)
+knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
+```
+
+### Current Home Value
+
+```{r echo = FALSE}
+current_home_value <- 0
+cat(dollar(current_home_value))
+```
+
+### Home Selling and Buying Cost Rates
+
+```{r}
+selling_costs_rate <- 0.085
+buying_costs_rate <- .025
+```
+
+### HOA Fees
+
+```{r}
+hoa_fees <- 301.25
+```
+
+### Tax and Insurance Rates
+
+```{r}
+# tax_rate <- (3.24 + 7.76 + 15.56 + 0.44) / 1000 / 12
+tax_rate <- (1438.68 + 3539.21 + 7394.35 + 211.90) / 505000 / 12 # from 2021 school tax & 2022 property tax rolls
+# tax_rate <- .01 / 12
+insurance_rate <- .324 / 100 / 12
+```
+
+### Mortgage Details for Purchase
+
+```{r}
+mortgage_interest_rate <- 3.75 / 100
+mortgage_term <- 30
+mortgage_points <- 0
+mortgage_fees <- 0
+```
+
+## Calculations
+
+We now assert two fundamental identities that can be used to solve for the most expensive house we can purchase under the guidelines.
+
+### Identity 1
+
+The first identity assumes we use all available cash for the down payment:
+
+Let
+
+  * $p_h$ be the price of the house
+  * $p_l$ be the principal of the loan on the house
+  * $c_a$ be available cash
+  * $c_l$ be the loan costs (fees)
+  * $c_b$ be the costs of the purchase transaction
+  * $r_l$ be the loan points
+  * $f_l$ be the loan fees
+  * $r_b$ be the buying costs rate
+  
+ Then
+    
+$$p_h = p_l + c_a - c_l - c_b$$
+
+Total loan costs equal costs due to points plus fees:
+
+$$c_l = p_l r_l + f_l$$
+
+Buying costs are a fraction of the purchase price:
+
+$$c_b = p_h r_b$$
+
+Combining the above yields:
+
+$$p_h (1 + r_b) = p_l (1 - r_l) + c_a - f_l$$
+
+### Identity 2
+
+The second identity asserts total housing costs are the sum of principal, interest, taxes, insurance, and other monthly fees, e.g., HOA fees. Let
+
+  * $p_t$ be the total monthly housing payment
+  * $p_{pi}$ be the monthly payment for principal and interest
+  * $p_{ti}$ be the monthly payment for taxes and insurance
+  * $p_o$ be other monthly payments
+
+Then
+
+$$p_t = p_{pi} + p_{ti} + p_o$$
+
+Let $v_p$ be the [present value](https://www.investopedia.com/terms/p/presentvalue.asp) function for an annuity under the terms of our mortgage. Then
+
+$$v_p(p_t) = v_p(p_{pi}) + v_p(p_{ti}) + v_p(p_o)$$
+
+By definition, the principal of a loan is the present value of the monthly principal and interest payment:
+
+$$ p_l = v_p(-p_{pi}) = -v_p(p_{pi})$$
+
+Tax and insurance payments are calculated on the basis of the purchase price:
+
+$$p_{ti} = p_h ( r_t + r_i )$$
+
+Present value is linear in the value of the annuity, so
+
+$$v_p(p_h ( r_t + r_i ) = p_h v_p(r_t + r_i )$$
+
+Combining the above yields:
+
+$$
+\begin{align}
+p_l &= v_p (p_h ( r_t + r_i ) ) + v_p(p_o) - v_p(p_t) \\
+	&= p_h v_p(r_t + r_i ) + v_p(p_o - p_t)
+\end{align}
+$$
+
+### Cash Available
+
+```{r echo=FALSE}
+current_mortgage_balance <- sum(current_mortgages$balance)
+current_sale_proceeds <- current_home_value * (1 - selling_costs_rate) - current_mortgage_balance
+cash_savings <- sum(savings$balance)
+
+cash_available <- current_sale_proceeds + cash_savings
+proceeds <- tibble(
+  `sale net` = dollar(current_home_value * (1 - selling_costs_rate)),
+  `mortgage balance` = dollar(current_mortgage_balance),
+  `sale proceeds` = dollar(current_sale_proceeds),
+  `cash savings` = dollar(cash_savings),
+  `cash available` = dollar(cash_available)
+)
+knitr::kable(proceeds)
+```
+
+### Solving for House Price and Loan Principal
+
+We can combine Identities 1 and 2 into a linear system as follows:
+
+$$ \begin{bmatrix}
+            r_l - 1 & 1 + r_b \\
+            1 & -v_p(r_t + r_i )
+        \end{bmatrix}
+ \begin{pmatrix}
+            p_l \\ p_h
+       \end{pmatrix}
+= \begin{pmatrix}
+            c_a - f_l \\ v_p(p_o - p_t)
+        \end{pmatrix}
+$$
+
+```{r echo = FALSE}
+
+gross_income <- sum(income$amount)
+
+total_other_debt_service <- sum(other_debt_service$payment)
+
+guidelines <- mutate(guidelines,
+                     limit = gross_income * ratio / 12,
+                     housing_limit = if_else(category == "debt", limit - total_other_debt_service, limit)
+                     )
+
+max_pt <- min(guidelines$housing_limit)
+# max_pt <- 2500
+
+v_p <- function(p)
+  pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, p, 1)
+
+A <- matrix(c(
+  mortgage_points - 1,  1 + buying_costs_rate,
+  1,                    -v_p(tax_rate + insurance_rate)
+  ), nrow = 2, byrow = TRUE
+)
+colnames(A) <- c("p_l", "p_h")
+
+b <- c(
+  cash_available - mortgage_fees,
+  v_p(hoa_fees - max_pt)
+)
+
+max_affordable <- as_tibble(t(solve(A, b)))  %>% mutate(ltv = p_l / p_h)
+```
+
+Under the guidelines, the price of the most expensive affordable house is `r dollar(max_affordable[["p_h"]])`,
+the loan principal is `r dollar(max_affordable[["p_l"]])`, and the loan-to-value is `r sprintf("%.0f%%", max_affordable[["ltv"]] * 100)`.
+
+# Being More Conservative
+
+There are two ways to be more conservative: one is to reserve some available cash, the other is to reserve some monthly housing costs. Each has an independent effect on the price of the most expensive affordable house, so we are exploring a two-dimensional option space.
+
+On all the plots that follow, the price of the most expensive affordable is the lower left corner point. Every other point is a more conservative option representing a reserve in available cash, PITI, or both.
+
+```{r echo=FALSE}
+cash_reserve <- seq(0, .8 * cash_available, 5000)
+pt_reserve <- seq(0, .8 * max_pt, 200)
+cases <- data.frame(expand.grid(pt_reserve=pt_reserve, cash_reserve=cash_reserve))
+cases$down <- cash_available - mortgage_fees - cases$cash_reserve
+cases$pt <- v_p(hoa_fees) - v_p(max_pt - cases$pt_reserve)
+B <- t(as.matrix(cases[, c("down", "pt")]))
+solutions <- cbind(cases[, c("pt_reserve", "cash_reserve")], t(solve(A, B)))
+
+bad_rows <- which(solutions$p_l < 0)
+solutions[bad_rows, c("p_h", "p_l")] <- c(NA, NA)
+solutions$down <- solutions$p_h - solutions$p_l
+solutions$ltv <- solutions$p_l / solutions$p_h
+solutions$tax <- solutions$p_h * tax_rate
+solutions$insurance <- solutions$p_h * insurance_rate
+
+plot_contour <- function(x, y, z, xlab, ylab, main, ...) {
+  options(repr.plot.width=10, repr.plot.height=8)
+  contour(
+    x=x, y=y, z=matrix(data=z, nrow=length(x), byrow=FALSE),
+    axes=TRUE, frame.plot=FALSE, xlab=xlab, ylab=ylab, main=main,
+    ...
+  )
+  axis(3, labels=FALSE); axis(4, labels=FALSE)
+}
+```
+## House Price as a Function of Reserves
+
+This plot shows how the price of the most expensive affordable house varies with cash and monthly costs reserves. For a fixed cash reserve, increasing the monthly costs reserve reduces the house price. For a fixed monthly costs reserve, increasing the cash reserve reduces the house price.
+
+```{r echo=FALSE}
+plot_contour(
+  x=pt_reserve, y=cash_reserve / 1000, z=solutions$p_h / 1000,
+  xlab="monthly costs reserve ($)", ylab="cash reserve ($k)", main="house price ($k)"
+)
+```
+
+## Loan Principal as a Function of Reserves
+
+This plot shows how the principal of the loan varies with cash and monthly costs reserves. For a fixed cash reserve, increasing the montly costs reserve reduces the loan principal. For a fixed monthly costs reserve, increasing the cash reserve increases the loan principal.
+
+```{r echo=FALSE}
+plot_contour(
+  x=pt_reserve, y=cash_reserve / 1000, z=solutions$p_l / 1000,
+  xlab="monthly costs reserve ($)", ylab="cash reserve", main="loan principal ($k)"
+)
+```
+
+## Loan to Value as a Function of Reserves
+
+The [loan-to-value ratio](https://www.investopedia.com/terms/l/loantovalue.asp) is an assessment of lending risk that financial institutions and other lenders examine before approving a mortgage. Typically, loan assessments with high LTV ratios are considered higher risk loans. Therefore, if the mortgage is approved, the loan has a higher interest rate.
+
+The terms of mortgage may establish bounds on the LTV; 80% is a typical upper bound.
+
+This plot shows how the loan-to-value varies with cash and monthly costs reserves.
+
+```{r echo=FALSE}
+plot_contour(
+  x=pt_reserve, y=cash_reserve / 1000, z=solutions$ltv * 100,
+  xlab="monthly costs reserve ($)", ylab="cash reserve ($k)", main="loan to value (%)"
+)
+```
+
+## Monthly Property Tax as a Function of Reserves
+
+This plot shows how the monthly property tax varies with cash and monthly costs reserves. Property tax is a fixed fraction of the house value, so this plot has the same shape as the home price plot.
+
+```{r echo=FALSE}
+plot_contour(
+  x=pt_reserve, y=cash_reserve / 1000, z=solutions$tax,
+  xlab="monthly costs reserve ($)", ylab="cash reserve ($k)", main="property tax ($/mo)"
+)
+```
+
+# Financing Particular Options
+
+Suppose we are interested in a set of potential purchases, each with its own price and HOA fees. For example:
+
+```{r}
+houses <- tribble(
+  ~id, ~p_h, ~hoa_fees, ~cash_reserve,
+  "30 Beekman St #105", 505035, 301.25, 10000,
+  "30 Beekman St #105", 505035, 301.25, 20000,
+  "30 Beekman St #105", 505035, 301.25, 30000,
+  "30 Beekman St #105", 505035, 301.25, 40000,
+  "30 Beekman St #105", 505035, 301.25, 50000,
+)
+```
+
+Given a house with price $p_h$ and a fixed cash (down payment) reserve $c_r$, we can calculate the loan principal and PITI reserve under the terms of a mortgage.
+
+$$ \begin{bmatrix} 1 - r_l & 0 \\
+1 & v_p(1)
+\end{bmatrix}
+\begin{pmatrix}
+p_l \\ p_t 
+\end{pmatrix}
+=
+\begin{pmatrix}
+p_h (1 + r_b) - c_a + c_r + f_l \\ p_h v_p(r_t + r_i ) + v_p(p_o)
+\end{pmatrix}
+$$
+
+Solving for each option yields:
+
+```{r echo=FALSE}
+A2 <- matrix(c(
+  1 - mortgage_points,  0,
+  1,                    v_p(1)
+  ), nrow = 2, byrow = TRUE
+)
+colnames(A2) <- c("p_l", "p_t")
+```
+
+```{r echo=FALSE}
+B2 <- matrix(
+        c(
+            houses$p_h * (1 + buying_costs_rate) - cash_available + houses$cash_reserve + mortgage_fees,
+            houses$p_h * v_p(tax_rate + insurance_rate) + v_p(houses$hoa_fees)
+        ),
+    nrow=2, byrow=TRUE
+)
+```
+
+```{r echo=FALSE}
+x2 <- solve(A2, B2)
+houses$p_l <- x2['p_l', ]
+houses$p_t <- x2['p_t', ]
+houses$`p_t reserve` <- max_pt - houses$p_t
+houses$ltv <- houses$p_l / houses$p_h
+options <- transmute(houses,
+                     `address` = id,
+                     `house price` = dollar(p_h),
+                     `HOA` = dollar(hoa_fees),
+                     `cash reserve` = dollar(cash_reserve),
+                     `loan principal` = dollar(p_l),
+                     `loan to value` = sprintf("%.0f%%", ltv * 100.),
+                     `monthly payments` = dollar(p_t),
+                     `monthly p+i` = dollar(p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -p_l, 0)),
+                     `monthly tax` = dollar(p_h * tax_rate),
+                     `monthly reserve` = dollar(`p_t reserve`),
+                     `total interest` = dollar(p_pi * mortgage_term * 12 - p_l)
+                     )
+knitr::kable(options)
+```
+
