@@ -349,6 +349,7 @@ Suppose we are interested in a set of potential purchases, each with its own pri
 ```{r}
 houses <- tribble(
   ~id, ~p_h, ~hoa_fees, ~cash_reserve,
+  "30 Beekman St #105", 505035, 301.25, 00000,
   "30 Beekman St #105", 505035, 301.25, 10000,
   "30 Beekman St #105", 505035, 301.25, 20000,
   "30 Beekman St #105", 505035, 301.25, 30000,
