@@ -73,10 +73,10 @@ current_mortgages <- tribble(
 ```{r echo = FALSE}
 savings <- tribble(
   ~asset,    ~balance,
-  "CEFCU Share", 363915.04,
-  "Escrow", 25000,
-  "Wells Fargo", 18654.77,
-  "United Visa", -41279.41,
+  "CEFCU Share", 344053.53,
+  "Escrow", 25035,
+  "Wells Fargo", 9203.13,
+  "United Visa", -24604.55,
   # "savings", 100000,
 )
 knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
@@ -242,7 +242,7 @@ max_pt <- min(guidelines$housing_limit)
 # max_pt <- 2500
 
 v_p <- function(p)
-  pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, p, 1)
+  pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, p, 0)
 
 A <- matrix(c(
   mortgage_points - 1,  1 + buying_costs_rate,
@@ -353,6 +353,7 @@ houses <- tribble(
   "30 Beekman St #105", 505035, 301.25, 20000,
   "30 Beekman St #105", 505035, 301.25, 30000,
   "30 Beekman St #105", 505035, 301.25, 40000,
+  "30 Beekman St #105", 505035, 301.25, 40000 - 3974,
   "30 Beekman St #105", 505035, 301.25, 50000,
 )
 ```
@@ -406,7 +407,7 @@ options <- transmute(houses,
                      `loan principal` = dollar(p_l),
                      `loan to value` = sprintf("%.0f%%", ltv * 100.),
                      `monthly payments` = dollar(p_t),
-                     `monthly p+i` = dollar(p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -p_l, 0)),
+                     `monthly p+i` = dollar(p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -p_l, 0, 0)),
                      `monthly tax` = dollar(p_h * tax_rate),
                      `monthly reserve` = dollar(`p_t reserve`),
                      `total interest` = dollar(p_pi * mortgage_term * 12 - p_l)
