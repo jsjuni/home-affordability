@@ -239,7 +239,6 @@ guidelines <- mutate(guidelines,
                      )
 
 max_pt <- min(guidelines$housing_limit)
-# max_pt <- 2500
 
 v_p <- function(p)
   pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, p, 0)
@@ -256,10 +255,11 @@ b <- c(
   v_p(hoa_fees - max_pt)
 )
 
-max_affordable <- as_tibble(t(solve(A, b)))  %>% mutate(ltv = p_l / p_h)
+max_affordable <- as_tibble(t(solve(A, b))) %>% mutate(ltv = p_l / p_h)
 ```
 
-Under the guidelines, the price of the most expensive affordable house is `r dollar(max_affordable[["p_h"]])`,
+Under the guidelines, our maximum monthly payment is
+`r dollar(max_pt)`, the most expensive house we can afford is `r dollar(max_affordable[["p_h"]])`,
 the loan principal is `r dollar(max_affordable[["p_l"]])`, and the loan-to-value is `r sprintf("%.0f%%", max_affordable[["ltv"]] * 100)`.
 
 # Being More Conservative
@@ -352,8 +352,8 @@ houses <- tribble(
   "30 Beekman St #105", 505035, 301.25, 10000,
   "30 Beekman St #105", 505035, 301.25, 20000,
   "30 Beekman St #105", 505035, 301.25, 30000,
-  "30 Beekman St #105", 505035, 301.25, 40000,
   "30 Beekman St #105", 505035, 301.25, 40000 - 3974,
+  "30 Beekman St #105", 505035, 301.25, 40000,
   "30 Beekman St #105", 505035, 301.25, 50000,
 )
 ```
