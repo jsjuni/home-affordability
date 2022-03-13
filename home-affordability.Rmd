@@ -256,17 +256,23 @@ b <- c(
 )
 
 max_affordable <- as_tibble(t(solve(A, b))) %>% mutate(ltv = p_l / p_h)
-```
 
-Under the guidelines, our maximum monthly payment is
-`r dollar(max_pt)`, the most expensive house we can afford is `r dollar(max_affordable[["p_h"]])`,
-the loan principal is `r dollar(max_affordable[["p_l"]])`, and the loan-to-value is `r sprintf("%.0f%%", max_affordable[["ltv"]] * 100)`.
+result <- tribble(
+  ~quantity, ~value,
+  "monthly payment", dollar(max_pt),
+  "house price", dollar(max_affordable[["p_h"]]),
+  "down payment", dollar(max_affordable[["p_h"]] - max_affordable[["p_l"]]),
+  "loan principal", dollar(max_affordable[["p_l"]]),
+  "loan-to-value", sprintf("%.0f%%", max_affordable[["ltv"]] * 100)
+)
+knitr::kable(result)
+```
 
 # Being More Conservative
 
-There are two ways to be more conservative: one is to reserve some available cash, the other is to reserve some monthly housing costs. Each has an independent effect on the price of the most expensive affordable house, so we are exploring a two-dimensional option space.
+There are two ways to be more conservative: one is to reserve some available cash, the other is to reserve some monthly housing costs. Each has an effect on the price of the most expensive affordable house, so we are exploring a two-dimensional option space.
 
-On all the plots that follow, the price of the most expensive affordable is the lower left corner point. Every other point is a more conservative option representing a reserve in available cash, PITI, or both.
+On all the plots that follow, the price of the most expensive affordable house is the lower left corner point. Every other point is a more conservative option representing a reserve in available cash, monthly payment, or both.
 
 ```{r echo=FALSE}
 cash_reserve <- seq(0, .8 * cash_available, 5000)
