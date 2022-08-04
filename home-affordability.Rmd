@@ -73,10 +73,10 @@ current_mortgages <- tribble(
 ```{r echo = FALSE}
 savings <- tribble(
   ~asset,    ~balance,
-  "CEFCU Share", 344053.53,
+  "CEFCU Share", 324198.54,
   "Escrow", 25035,
-  "Wells Fargo", 9203.13,
-  "United Visa", -24604.55,
+  "Wells Fargo", 2833.60,
+  "United Visa", -17547.10,
   # "savings", 100000,
 )
 knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
@@ -105,10 +105,12 @@ hoa_fees <- 301.25
 ### Tax and Insurance Rates
 
 ```{r}
-# tax_rate <- (3.24 + 7.76 + 15.56 + 0.44) / 1000 / 12
-tax_rate <- (1438.68 + 3539.21 + 7394.35 + 211.90) / 505000 / 12 # from 2021 school tax & 2022 property tax rolls
+tax_rate <- max(
+  (3.24 + 7.76 + 15.56 + 0.44) / 1000 / 12,
+  (1438.68 + 3539.21 + 7394.35 + 211.90) / 505000 / 12 # from 2021 school tax & 2022 property tax rolls
+)
 # tax_rate <- .01 / 12
-insurance_rate <- .324 / 100 / 12
+insurance_rate <- 702 / 505035 / 12 # rough estimate for NY
 ```
 
 ### Mortgage Details for Purchase
@@ -358,10 +360,18 @@ houses <- tribble(
   "30 Beekman St #105", 505035, 301.25, 00000,
   "30 Beekman St #105", 505035, 301.25, 10000,
   "30 Beekman St #105", 505035, 301.25, 20000,
+  "30 Beekman St #105", 505035, 301.25, 25000,
   "30 Beekman St #105", 505035, 301.25, 30000,
-  "30 Beekman St #105", 505035, 301.25, 40000 - 3974,
+  "30 Beekman St #105", 505035, 301.25, 35000,
   "30 Beekman St #105", 505035, 301.25, 40000,
+  "30 Beekman St #105", 505035, 301.25, 45000,
   "30 Beekman St #105", 505035, 301.25, 50000,
+  "30 Beekman St #105", 505035, 301.25, 55000,
+  "30 Beekman St #105", 505035, 301.25, 60000,
+  "30 Beekman St #105", 505035, 301.25, 65000,
+  "30 Beekman St #105", 505035, 301.25, 70000,
+  "30 Beekman St #105", 505035, 301.25, 75000,
+  "30 Beekman St #105", 505035, 301.25, 80000,
 )
 ```
 
