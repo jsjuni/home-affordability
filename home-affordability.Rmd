@@ -61,7 +61,8 @@ knitr::kable(mutate(other_debt_service, payment = dollar(payment)), align = "lr"
 ```{r echo = FALSE}
 current_mortgages <- tribble(
   ~lender,   ~balance,
-  "lender 1",   250000,
+  "first",   200000,
+  "heloc",    50000,
 )
 knitr::kable(mutate(current_mortgages, balance = dollar(balance)), align="lr")
 ```
