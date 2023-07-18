@@ -414,6 +414,7 @@ B2 <- matrix(
 x2 <- solve(A2, B2)
 houses$p_l <- x2['p_l', ]
 houses$p_t <- x2['p_t', ]
+houses$p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -houses$p_l, 0, 0)
 houses$`p_t reserve` <- max_pt - houses$p_t
 houses$ltv <- houses$p_l / houses$p_h
 options <- transmute(houses,
@@ -424,7 +425,7 @@ options <- transmute(houses,
                      `loan principal` = dollar(p_l),
                      `loan to value` = sprintf("%.0f%%", ltv * 100.),
                      `monthly payments` = dollar(p_t),
-                     `monthly p+i` = dollar(p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -p_l, 0, 0)),
+                     `monthly p+i` = dollar(p_pi),
                      `monthly tax` = dollar(p_h * tax_rate),
                      `monthly reserve` = dollar(`p_t reserve`),
                      `total interest` = dollar(p_pi * mortgage_term * 12 - p_l)
