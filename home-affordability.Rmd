@@ -257,7 +257,8 @@ result <- tribble(
   "house price", dollar(max_affordable[["p_h"]]),
   "down payment", dollar(max_affordable[["p_h"]] - max_affordable[["p_l"]]),
   "loan principal", dollar(max_affordable[["p_l"]]),
-  "loan-to-value", sprintf("%.0f%%", max_affordable[["ltv"]] * 100)
+  "loan-to-value", sprintf("%.0f%%", max_affordable[["ltv"]] * 100),
+  "cash to close", dollar(max_affordable[["p_h"]] * (1 + buying_costs_rate) - max_affordable[["p_l"]])
 )
 knitr::kable(result)
 ```
