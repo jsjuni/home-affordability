@@ -1,23 +1,53 @@
 library(shiny)
 library(dplyr)
+library(magrittr)
 library(scales)
 library(FinCal)
 
+matrix_A <- function(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate) {
+  matrix(
+    c(
+      mortgage_points - 1,  1 + buying_costs_rate,
+      1,                    -pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, tax_rate + insurance_rate, 0)
+    ), nrow = 2, byrow = TRUE
+  ) |> set_colnames(c("p_l", "p_h"))
+}
+
 find_max_affordable <- function(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate, cash_available, mortgage_fees, hoa_fees, max_pt) {
   
-  A <- matrix(c(
-      mortgage_points - 1,  1 + buying_costs_rate,
-      1,                    -pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, tax_rate + insurance_rate)
-    ), nrow = 2, byrow = TRUE
-  )
-  colnames(A) <- c("p_l", "p_h")
-  
+  A <- matrix_A(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate)
+
   b <- c(
     cash_available - mortgage_fees,
     pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt)
   )
   
   as_tibble(t(solve(A, b))) |> mutate(ltv = p_l / p_h)
+}
+
+find_solutions <- function(cash_available, max_pt, mortgage_fees, mortgage_interest_rate, mortgage_term, hoa_fees, mortgage_points, buying_costs_rate, tax_rate, insurance_rate) {
+  cash_reserve <- seq(0, .8 * cash_available, 5000)
+  pt_reserve <- seq(0, .8 * max_pt, 200)
+  cases <- data.frame(expand.grid(pt_reserve = pt_reserve, cash_reserve = cash_reserve)) |>
+    mutate(
+      down = cash_available - mortgage_fees - cash_reserve,
+      pt = pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt + pt_reserve, 0)
+    )
+  
+  A <- matrix_A(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate)
+  
+  B <- t(as.matrix(cases[, c("down", "pt")]))
+  
+  solutions <- cbind(cases[, c("pt_reserve", "cash_reserve")], t(solve(A, B))) |>
+    mutate(
+      p_h = ifelse(p_l < 0, NA, p_h),
+      p_l = ifelse(p_l < 0, NA, p_l),
+      down = p_h - p_l,
+      ltv = p_l / p_h,
+      tax = p_h * tax_rate,
+      insurance = p_h * insurance_rate
+   )
+  solutions
 }
 
 ui <- fluidPage(
@@ -48,6 +78,12 @@ ui <- fluidPage(
   textOutput("loanPayment"),
   textOutput("taxPayment"),
   textOutput("insurancePayment"),
+  
+  numericInput(inputId = "maxCashReserve", "maximum cash reserve ($k)", value = 150, min = 0, step = 1),
+  numericInput(inputId = "maxMonthlyCostsReserve", "maximum monthly costs reserve ($k)", value = 3500, min = 0, step = 1),
+  
+  tableOutput("solutions")
+  
 )
 server <- function(input, output, session) {
   
@@ -100,5 +136,21 @@ server <- function(input, output, session) {
   output$loanToValue <- renderText({
     paste0("loan-to-value ratio ", sprintf("%.0f%%", maxAffordable()[['ltv']] * 100))
   })
+  
+  solutions <- reactive(
+    find_solutions(
+      cashAvailable(),
+      maxPayment(),
+      input$mortgageFees / 100,
+      input$mortgageInterestRate / 100,
+      input$mortgageTerm,
+      input$hoaFees,
+      input$mortgagePoints / 100,
+      input$buyingCostsRate / 100,
+      input$propertyTaxRate / 1200,
+      input$insuranceRate / 1200
+    )
+  )
+  output$solutions <- renderTable({solutions()})
 }
 shinyApp(ui, server)
