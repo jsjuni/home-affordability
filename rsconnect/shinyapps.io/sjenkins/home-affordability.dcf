@@ -5,8 +5,9 @@ account: sjenkins
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 10801313
-bundleId: 8050672
+bundleId: 8055136
 url: https://sjenkins.shinyapps.io/home-affordability/
 version: 1
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: .RData|data/guidelines.csv|data/income.csv|home-affordability.html|home-affordability.nb.html|home-affordability.Rmd|LICENSE|README.md

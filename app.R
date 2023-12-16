@@ -26,8 +26,8 @@ find_max_affordable <- function(mortgage_points, buying_costs_rate, mortgage_int
 }
 
 find_solutions <- function(cash_available, max_pt, mortgage_fees, mortgage_interest_rate, mortgage_term, hoa_fees, mortgage_points, buying_costs_rate, tax_rate, insurance_rate) {
-  cash_reserve <- seq(0, .8 * cash_available, 5000)
-  pt_reserve <- seq(0, .8 * max_pt, 200)
+  cash_reserve <- seq(0, cash_available, 5000)
+  pt_reserve <- seq(0, max_pt, 200)
   cases <- data.frame(expand.grid(pt_reserve = pt_reserve, cash_reserve = cash_reserve)) |>
     mutate(
       down = cash_available - mortgage_fees - cash_reserve,
@@ -88,10 +88,10 @@ ui <- fluidPage(
   textOutput("taxPayment"),
   textOutput("insurancePayment"),
   
-  plotOutput("housePricePlot"),
-  plotOutput("loanPrincipalPlot"),
-  plotOutput("ltvPlot"),
-  plotOutput("propertyTaxPlot")
+  plotOutput("housePricePlot", width = "600px"),
+  plotOutput("loanPrincipalPlot", width = "600px"),
+  plotOutput("ltvPlot", width = "600px"),
+  plotOutput("propertyTaxPlot", width = "600px")
   
 )
 server <- function(input, output, session) {
@@ -167,7 +167,7 @@ server <- function(input, output, session) {
       z = solutions()$p_h / 1000,
       xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "house price ($k)"
     )
-  })
+  }, res = 96)
 
   output$loanPrincipalPlot <- renderPlot({
     plot_contour(
@@ -176,7 +176,7 @@ server <- function(input, output, session) {
       z = solutions()$p_l / 1000,
       xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "loan principal ($k)"
     )
-  })
+  }, res = 96)
 
   output$ltvPlot <- renderPlot({
     plot_contour(
@@ -185,7 +185,7 @@ server <- function(input, output, session) {
       z = solutions()$ltv * 100,
       xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "loan to value (%)"
     )
-  })
+  }, res = 96)
   
   output$propertyTaxPlot <- renderPlot({
     plot_contour(
@@ -194,7 +194,7 @@ server <- function(input, output, session) {
       z = solutions()$tax,
       xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "property tax ($/mo)"
     )
-  })
+  }, res = 96)
   
 }
 shinyApp(ui, server)
