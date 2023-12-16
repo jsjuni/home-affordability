@@ -38,7 +38,7 @@ find_solutions <- function(cash_available, max_pt, mortgage_fees, mortgage_inter
   
   B <- t(as.matrix(cases[, c("down", "pt")]))
   
-  solutions <- cbind(cases[, c("pt_reserve", "cash_reserve")], t(solve(A, B))) |>
+  cbind(cases[, c("pt_reserve", "cash_reserve")], t(solve(A, B))) |>
     mutate(
       p_h = ifelse(p_l < 0, NA, p_h),
       p_l = ifelse(p_l < 0, NA, p_l),
@@ -47,7 +47,16 @@ find_solutions <- function(cash_available, max_pt, mortgage_fees, mortgage_inter
       tax = p_h * tax_rate,
       insurance = p_h * insurance_rate
    )
-  solutions
+}
+
+plot_contour <- function(x, y, z, xlab, ylab, main, ...) {
+  options(repr.plot.width=10, repr.plot.height=8)
+  contour(
+    x=x, y=y, z=matrix(data=z, nrow=length(x), byrow=FALSE),
+    axes=TRUE, frame.plot=FALSE, xlab=xlab, ylab=ylab, main=main,
+    ...
+  )
+  axis(3, labels=FALSE); axis(4, labels=FALSE)
 }
 
 ui <- fluidPage(
@@ -79,10 +88,10 @@ ui <- fluidPage(
   textOutput("taxPayment"),
   textOutput("insurancePayment"),
   
-  numericInput(inputId = "maxCashReserve", "maximum cash reserve ($k)", value = 150, min = 0, step = 1),
-  numericInput(inputId = "maxMonthlyCostsReserve", "maximum monthly costs reserve ($k)", value = 3500, min = 0, step = 1),
-  
-  tableOutput("solutions")
+  plotOutput("housePricePlot"),
+  plotOutput("loanPrincipalPlot"),
+  plotOutput("ltvPlot"),
+  plotOutput("propertyTaxPlot")
   
 )
 server <- function(input, output, session) {
@@ -151,6 +160,41 @@ server <- function(input, output, session) {
       input$insuranceRate / 1200
     )
   )
-  output$solutions <- renderTable({solutions()})
+  output$housePricePlot <- renderPlot({
+    plot_contour(
+      x = unique(sort(solutions()$pt_reserve)),
+      y = unique(sort(solutions()$cash_reserve)) / 1000,
+      z = solutions()$p_h / 1000,
+      xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "house price ($k)"
+    )
+  })
+
+  output$loanPrincipalPlot <- renderPlot({
+    plot_contour(
+      x = unique(sort(solutions()$pt_reserve)),
+      y = unique(sort(solutions()$cash_reserve)) / 1000,
+      z = solutions()$p_l / 1000,
+      xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "loan principal ($k)"
+    )
+  })
+
+  output$ltvPlot <- renderPlot({
+    plot_contour(
+      x = unique(sort(solutions()$pt_reserve)),
+      y = unique(sort(solutions()$cash_reserve)) / 1000,
+      z = solutions()$ltv * 100,
+      xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "loan to value (%)"
+    )
+  })
+  
+  output$propertyTaxPlot <- renderPlot({
+    plot_contour(
+      x = unique(sort(solutions()$pt_reserve)),
+      y = unique(sort(solutions()$cash_reserve)) / 1000,
+      z = solutions()$tax,
+      xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "property tax ($/mo)"
+    )
+  })
+  
 }
 shinyApp(ui, server)
