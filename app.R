@@ -96,7 +96,8 @@ ui <- fluidPage(
       ),
       wellPanel(
         titlePanel("Monthly Housing Costs Per Guidelines"),
-        textOutput("maxPayment")
+        textOutput("maxPayment"),
+        textOutput("housingFraction")
       ),
       wellPanel(
         titlePanel("Most Expensive Affordable House"),
@@ -111,10 +112,10 @@ ui <- fluidPage(
         titlePanel("Loan Details"),
         textOutput("loanPrincipal"),
         textOutput("loanToValue"),
-        textOutput("loanPayment"
+        textOutput("loanPayment")
       ),
       wellPanel(
-        titlePanel("Property Taxes and Insurance")
+        titlePanel("Property Taxes and Insurance"),
         textOutput("taxPayment"),
         textOutput("insurancePayment")
       ),
@@ -159,8 +160,8 @@ server <- function(input, output, session) {
     paste0("maximum monthly payment ", dollar(maxPayment()))
   })
   
-  output$maxPayment <- renderText({
-    
+  output$housingFraction <- renderText({
+    paste0("fraction of monthly income ", sprintf("%.0f%%", maxPayment() / monthlyGrossIncome() * 100))
   })
   
   maxAffordable <- reactive(find_max_affordable(input$mortgagePoints / 100, input$buyingCostsRate / 100, input$mortgageInterestRate / 100,
