@@ -111,10 +111,10 @@ ui <- fluidPage(
         titlePanel("Loan Details"),
         textOutput("loanPrincipal"),
         textOutput("loanToValue"),
-        textOutput("loanPayment")
+        textOutput("loanPayment"
       ),
       wellPanel(
-        titlePanel("Property Taxes and Insurance"),
+        titlePanel("Property Taxes and Insurance")
         textOutput("taxPayment"),
         textOutput("insurancePayment")
       ),
@@ -157,6 +157,10 @@ server <- function(input, output, session) {
   
   output$maxPayment <- renderText({
     paste0("maximum monthly payment ", dollar(maxPayment()))
+  })
+  
+  output$maxPayment <- renderText({
+    
   })
   
   maxAffordable <- reactive(find_max_affordable(input$mortgagePoints / 100, input$buyingCostsRate / 100, input$mortgageInterestRate / 100,
