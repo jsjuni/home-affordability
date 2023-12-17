@@ -25,20 +25,21 @@ find_max_affordable <- function(mortgage_points, buying_costs_rate, mortgage_int
   as_tibble(t(solve(A, b))) |> mutate(ltv = p_l / p_h)
 }
 
-find_solutions <- function(cash_available, max_pt, mortgage_fees, mortgage_interest_rate, mortgage_term, hoa_fees, mortgage_points, buying_costs_rate, tax_rate, insurance_rate) {
+find_solutions <- function(cash_available, max_pt, mortgage_fees, mortgage_interest_rate, mortgage_term, hoa_fees, mortgage_points, buying_costs_rate, tax_rate, insurance_rate, monthly_income) {
   cash_reserve <- seq(0, 0.8 * cash_available, 5000)
   pt_reserve <- seq(0, 0.8 * max_pt, 200)
   cases <- data.frame(expand.grid(pt_reserve = pt_reserve, cash_reserve = cash_reserve)) |>
     mutate(
       down = cash_available - mortgage_fees - cash_reserve,
-      pt = pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt + pt_reserve, 0)
+      pt = pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt + pt_reserve, 0),
+      er = (max_pt - pt_reserve) / monthly_income
     )
   
   A <- matrix_A(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate)
   
   B <- t(as.matrix(cases[, c("down", "pt")]))
   
-  cbind(cases[, c("pt_reserve", "cash_reserve")], t(solve(A, B))) |>
+  cbind(cases[, c("pt_reserve", "cash_reserve", "er")], t(solve(A, B))) |>
     mutate(
       p_h = ifelse(p_l < 0, NA, p_h),
       p_l = ifelse(p_l < 0, NA, p_l),
@@ -121,6 +122,7 @@ ui <- fluidPage(
       ),
     
       plotOutput("housePricePlot"),
+      plotOutput("expenseFractionPlot"),
       plotOutput("loanPrincipalPlot"),
       plotOutput("ltvPlot"),
       plotOutput("propertyTaxPlot")
@@ -210,7 +212,8 @@ server <- function(input, output, session) {
       input$mortgagePoints / 100,
       input$buyingCostsRate / 100,
       input$propertyTaxRate / 1200,
-      input$insuranceRate / 1200
+      input$insuranceRate / 1200,
+      monthlyGrossIncome()
     )
   )
   output$housePricePlot <- renderPlot({
@@ -222,6 +225,15 @@ server <- function(input, output, session) {
     )
   }, res = 96)
 
+  output$expenseFractionPlot <- renderPlot({
+    plot_contour(
+      x = unique(sort(solutions()$pt_reserve)),
+      y = unique(sort(solutions()$cash_reserve)) / 1000,
+      z = solutions()$er * 100,
+      xlab = "monthly costs reserve ($)", ylab = "cash reserve ($k)", main = "housing expense ratio (%)"
+    )
+  }, res = 96)
+  
   output$loanPrincipalPlot <- renderPlot({
     plot_contour(
       x = unique(sort(solutions()$pt_reserve)),
