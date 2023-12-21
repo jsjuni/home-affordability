@@ -21,7 +21,7 @@ This notebook provides a way to estimate the price of the most expensive house w
 
 ### The 28/36 Rule
 
-According to the [28/36/rule](https://www.investopedia.com/terms/t/twenty-eight-thirty-six-rule.asp), a household should spend a maximum of 28% of its gross monthly income on total housing expenses and no more than 36% on total debt service, including housing and other debt such as car loans and credit cards. Lenders often use this rule to assess whether to extend credit to borrowers.
+According to the [28/36 rule](https://www.investopedia.com/terms/t/twenty-eight-thirty-six-rule.asp), a household should spend a maximum of 28% of its gross monthly income on total housing expenses and no more than 36% on total debt service, including housing and other debt such as car loans and credit cards. Lenders often use this rule to assess whether to extend credit to borrowers.
 
 We take note of those numbers:
 

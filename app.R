@@ -78,8 +78,8 @@ ui <- fluidPage(
       numericInput(inputId = "insuranceRate", label = "Insurance Rate (%)", value = .1, min = 0, max = 100, step = .01),
       numericInput(inputId = "mortgageInterestRate", label = "Mortgage Interest Rate (%)", value = 3.75, min = 0, max = 100, step = .01),
       numericInput(inputId = "mortgageTerm", label = "Mortgage Term (Y)", value = 30, min = 0, max = 100, step = 1),
-      numericInput(inputId = "mortgagePoints", label = "Mortgage Points", value = 0, min = 0, max = 5, step = .1),
-      numericInput(inputId = "mortgageFees", label = "Mortgage Fees", value = 0, min = 0, step = 1)
+      numericInput(inputId = "mortgagePoints", label = "Mortgage Points", value = 1, min = 0, max = 5, step = .1),
+      numericInput(inputId = "mortgageFees", label = "Mortgage Fees", value = 2000, min = 0, step = 1)
     ),
     mainPanel(
       wellPanel(
@@ -202,7 +202,7 @@ server <- function(input, output, session) {
 
   closingCosts <- reactive(
     maxAffordable()[['p_h']] * input$buyingCostsRate / 100 +
-      maxAffordable()[['p_l']] * input$mortgagePoints /100 +
+      maxAffordable()[['p_l']] * input$mortgagePoints / 100 +
       input$mortgageFees
   )
   output$closingCosts <- renderText({
