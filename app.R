@@ -109,6 +109,9 @@ ui <- fluidPage(
       wellPanel(
         titlePanel("Purchase Details"),
         textOutput("downPayment"),
+        textOutput("transactionCosts"),
+        textOutput("mortgagePoints"),
+        textOutput("mortgageFees"),
         textOutput("closingCosts"),
       ),
       wellPanel(
@@ -200,13 +203,25 @@ server <- function(input, output, session) {
     paste0("down payment ", dollar(maxAffordable()[['p_h']] - maxAffordable()[['p_l']]))
   })
 
+  output$transactionCosts <- renderText({
+    paste0("transaction costs ", dollar(maxAffordable()[['p_h']] * input$buyingCostsRate / 100))
+  })
+  
+  output$mortgagePoints <- renderText({
+    paste0("mortgage points ", dollar(maxAffordable()[['p_l']] * input$mortgagePoints / 100))
+  })
+  
+  output$mortgageFees <- renderText({
+    paste0("mortgage fees ", dollar(input$mortgageFees))
+  })
+  
   closingCosts <- reactive(
     maxAffordable()[['p_h']] * input$buyingCostsRate / 100 +
       maxAffordable()[['p_l']] * input$mortgagePoints / 100 +
       input$mortgageFees
   )
   output$closingCosts <- renderText({
-    paste0("closing costs ", dollar(closingCosts()))
+    paste0("total closing costs ", dollar(closingCosts()))
   })
   
   output$loanToValue <- renderText({
