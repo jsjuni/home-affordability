@@ -21,7 +21,7 @@ This notebook provides a way to estimate the price of the most expensive house w
 
 ### The 28/36 Rule
 
-According to the [28/36/rule](https://www.investopedia.com/terms/t/twenty-eight-thirty-six-rule.asp), a household should spend a maximum of 28% of its gross monthly income on total housing expenses and no more than 36% on total debt service, including housing and other debt such as car loans and credit cards. Lenders often use this rule to assess whether to extend credit to borrowers.
+According to the [28/36 rule](https://www.investopedia.com/terms/t/twenty-eight-thirty-six-rule.asp), a household should spend a maximum of 28% of its gross monthly income on total housing expenses and no more than 36% on total debt service, including housing and other debt such as car loans and credit cards. Lenders often use this rule to assess whether to extend credit to borrowers.
 
 We take note of those numbers:
 
@@ -29,7 +29,7 @@ We take note of those numbers:
 guidelines <- tribble(
   ~category, ~ratio,
   "housing", 0.28,
-  "debt",    0.36
+  "debt",    0.36,
 )
 knitr::kable(guidelines)
 ```
@@ -39,10 +39,9 @@ knitr::kable(guidelines)
 ```{r echo=FALSE}
 income <- tribble(
   ~person,  ~source,     ~amount,
-  "steven", "retirement", (1666.50 + 400 + 4599.50) * 12,
-  "steven", "jpl",        100000,
-  "diane",  "opm",         50712,
-  "diane",  "ss",          19800
+  "person 1", "job 1",    50000,
+  "person 2", "job 2",    50000,
+  "person 2", "job 3",     7000,
 )
 knitr::kable(mutate(income, amount = dollar(amount)), align = "llr")
 ```
@@ -51,8 +50,8 @@ knitr::kable(mutate(income, amount = dollar(amount)), align = "llr")
 
 ```{r echo = FALSE}
 other_debt_service <- tribble(
-  ~loan,    ~payment,
-  "fedloan",    2000,
+  ~loan,          ~payment,
+  "student loans",    500,
 )
 knitr::kable(mutate(other_debt_service, payment = dollar(payment)), align = "lr")
 ```
@@ -62,10 +61,10 @@ knitr::kable(mutate(other_debt_service, payment = dollar(payment)), align = "lr"
 ```{r echo = FALSE}
 current_mortgages <- tribble(
   ~lender,   ~balance,
-  # "fairway",   606274,
-  # "cefcu heloc", 59953,
+  "first",   200000,
+  "heloc",    42000,
 )
-#knitr::kable(mutate(current_mortgages, balance = dollar(balance)), align="lr")
+knitr::kable(mutate(current_mortgages, balance = dollar(balance)), align="lr")
 ```
 
 ### Cash Savings
@@ -73,11 +72,8 @@ current_mortgages <- tribble(
 ```{r echo = FALSE}
 savings <- tribble(
   ~asset,    ~balance,
-  "CEFCU Share", 324198.54,
-  "Escrow", 25035,
-  "Wells Fargo", 2833.60,
-  "United Visa", -17547.10,
-  # "savings", 100000,
+  "savings 1", 30000,
+  "savings 2", 20000
 )
 knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
 ```
@@ -85,7 +81,7 @@ knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
 ### Current Home Value
 
 ```{r echo = FALSE}
-current_home_value <- 0
+current_home_value <- 412000
 cat(dollar(current_home_value))
 ```
 
@@ -99,27 +95,23 @@ buying_costs_rate <- .025
 ### HOA Fees
 
 ```{r}
-hoa_fees <- 301.25
+hoa_fees <- 0
 ```
 
-### Tax and Insurance Rates
+### Monthly Tax and Insurance Rates
 
 ```{r}
-tax_rate <- max(
-  (3.24 + 7.76 + 15.56 + 0.44) / 1000 / 12,
-  (1438.68 + 3539.21 + 7394.35 + 211.90) / 505000 / 12 # from 2021 school tax & 2022 property tax rolls
-)
-# tax_rate <- .01 / 12
-insurance_rate <- 702 / 505035 / 12 # rough estimate for NY
+tax_rate <- .02 / 12
+insurance_rate <- .001 / 12
 ```
 
 ### Mortgage Details for Purchase
 
 ```{r}
-mortgage_interest_rate <- 3.75 / 100
+mortgage_interest_rate <- 5.25 / 100
 mortgage_term <- 30
-mortgage_points <- 0
-mortgage_fees <- 0
+mortgage_points <- 2 / 100
+mortgage_fees <- 500
 ```
 
 ## Calculations
@@ -247,14 +239,14 @@ v_p <- function(p)
 
 A <- matrix(c(
   mortgage_points - 1,  1 + buying_costs_rate,
-  1,                    -v_p(tax_rate + insurance_rate)
+  1,                    -pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, tax_rate + insurance_rate, 0)
   ), nrow = 2, byrow = TRUE
 )
 colnames(A) <- c("p_l", "p_h")
 
 b <- c(
   cash_available - mortgage_fees,
-  v_p(hoa_fees - max_pt)
+  pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt)
 )
 
 max_affordable <- as_tibble(t(solve(A, b))) %>% mutate(ltv = p_l / p_h)
@@ -265,7 +257,8 @@ result <- tribble(
   "house price", dollar(max_affordable[["p_h"]]),
   "down payment", dollar(max_affordable[["p_h"]] - max_affordable[["p_l"]]),
   "loan principal", dollar(max_affordable[["p_l"]]),
-  "loan-to-value", sprintf("%.0f%%", max_affordable[["ltv"]] * 100)
+  "loan-to-value", sprintf("%.0f%%", max_affordable[["ltv"]] * 100),
+  "cash to close", dollar(max_affordable[["p_h"]] * (1 + buying_costs_rate) - max_affordable[["p_l"]] * (1 - mortgage_points) + mortgage_fees)
 )
 knitr::kable(result)
 ```
@@ -357,21 +350,14 @@ Suppose we are interested in a set of potential purchases, each with its own pri
 ```{r}
 houses <- tribble(
   ~id, ~p_h, ~hoa_fees, ~cash_reserve,
-  "30 Beekman St #105", 505035, 301.25, 00000,
-  "30 Beekman St #105", 505035, 301.25, 10000,
-  "30 Beekman St #105", 505035, 301.25, 20000,
-  "30 Beekman St #105", 505035, 301.25, 25000,
-  "30 Beekman St #105", 505035, 301.25, 30000,
-  "30 Beekman St #105", 505035, 301.25, 35000,
-  "30 Beekman St #105", 505035, 301.25, 40000,
-  "30 Beekman St #105", 505035, 301.25, 45000,
-  "30 Beekman St #105", 505035, 301.25, 50000,
-  "30 Beekman St #105", 505035, 301.25, 55000,
-  "30 Beekman St #105", 505035, 301.25, 60000,
-  "30 Beekman St #105", 505035, 301.25, 65000,
-  "30 Beekman St #105", 505035, 301.25, 70000,
-  "30 Beekman St #105", 505035, 301.25, 75000,
-  "30 Beekman St #105", 505035, 301.25, 80000,
+  "100 Main St", 675000, 200, 00000,
+  "100 Main St", 675000, 200, 20000,
+  "100 Main St", 675000, 200, 40000,
+  "100 Main St", 675000, 200, 60000,
+  "200 Main St", 725000, 0, 00000,
+  "200 Main St", 725000, 0, 20000,
+  "200 Main St", 725000, 0, 40000,
+  "200 Main St", 725000, 0, 60000,
 )
 ```
 
