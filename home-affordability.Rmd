@@ -39,9 +39,9 @@ knitr::kable(guidelines)
 ```{r echo=FALSE}
 income <- tribble(
   ~person,  ~source,     ~amount,
-  "person 1", "job 1",    100000,
-  "person 2", "job 2",    100000,
-  "person 2", "job 3",     20000,
+  "person 1", "job 1",    50000,
+  "person 2", "job 2",    50000,
+  "person 2", "job 3",     7000,
 )
 knitr::kable(mutate(income, amount = dollar(amount)), align = "llr")
 ```
@@ -51,7 +51,7 @@ knitr::kable(mutate(income, amount = dollar(amount)), align = "llr")
 ```{r echo = FALSE}
 other_debt_service <- tribble(
   ~loan,          ~payment,
-  "student loans",    2000,
+  "student loans",    500,
 )
 knitr::kable(mutate(other_debt_service, payment = dollar(payment)), align = "lr")
 ```
@@ -62,7 +62,7 @@ knitr::kable(mutate(other_debt_service, payment = dollar(payment)), align = "lr"
 current_mortgages <- tribble(
   ~lender,   ~balance,
   "first",   200000,
-  "heloc",    50000,
+  "heloc",    42000,
 )
 knitr::kable(mutate(current_mortgages, balance = dollar(balance)), align="lr")
 ```
@@ -72,8 +72,8 @@ knitr::kable(mutate(current_mortgages, balance = dollar(balance)), align="lr")
 ```{r echo = FALSE}
 savings <- tribble(
   ~asset,    ~balance,
-  "savings 1", 100000,
-  "savings 2",  25000
+  "savings 1", 30000,
+  "savings 2", 20000
 )
 knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
 ```
@@ -81,7 +81,7 @@ knitr::kable(mutate(savings, balance = dollar(balance)), align="lr")
 ### Current Home Value
 
 ```{r echo = FALSE}
-current_home_value <- 400000
+current_home_value <- 412000
 cat(dollar(current_home_value))
 ```
 
@@ -108,10 +108,10 @@ insurance_rate <- .001 / 12
 ### Mortgage Details for Purchase
 
 ```{r}
-mortgage_interest_rate <- 3.75 / 100
+mortgage_interest_rate <- 5.25 / 100
 mortgage_term <- 30
-mortgage_points <- 0
-mortgage_fees <- 0
+mortgage_points <- 2 / 100
+mortgage_fees <- 500
 ```
 
 ## Calculations
@@ -239,14 +239,14 @@ v_p <- function(p)
 
 A <- matrix(c(
   mortgage_points - 1,  1 + buying_costs_rate,
-  1,                    -v_p(tax_rate + insurance_rate)
+  1,                    -pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, tax_rate + insurance_rate, 0)
   ), nrow = 2, byrow = TRUE
 )
 colnames(A) <- c("p_l", "p_h")
 
 b <- c(
   cash_available - mortgage_fees,
-  v_p(hoa_fees - max_pt)
+  pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt)
 )
 
 max_affordable <- as_tibble(t(solve(A, b))) %>% mutate(ltv = p_l / p_h)
@@ -258,7 +258,7 @@ result <- tribble(
   "down payment", dollar(max_affordable[["p_h"]] - max_affordable[["p_l"]]),
   "loan principal", dollar(max_affordable[["p_l"]]),
   "loan-to-value", sprintf("%.0f%%", max_affordable[["ltv"]] * 100),
-  "cash to close", dollar(max_affordable[["p_h"]] * (1 + buying_costs_rate) - max_affordable[["p_l"]])
+  "cash to close", dollar(max_affordable[["p_h"]] * (1 + buying_costs_rate) - max_affordable[["p_l"]] * (1 - mortgage_points) + mortgage_fees)
 )
 knitr::kable(result)
 ```
