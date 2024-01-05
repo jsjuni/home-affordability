@@ -14,14 +14,14 @@ matrix_A <- function(mortgage_points, buying_costs_rate, mortgage_interest_rate,
 }
 
 find_max_affordable <- function(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate, cash_available, mortgage_fees, hoa_fees, max_pt) {
-  
+
   A <- matrix_A(mortgage_points, buying_costs_rate, mortgage_interest_rate, mortgage_term, tax_rate, insurance_rate)
 
   b <- c(
     cash_available - mortgage_fees,
     pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, hoa_fees - max_pt)
   )
-  
+
   as_tibble(t(solve(A, b))) |> mutate(ltv = p_l / p_h)
 }
 
