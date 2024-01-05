@@ -66,20 +66,20 @@ ui <- fluidPage(
     sidebarPanel(
       numericInput(inputId = "maxHousingExpenseFraction", label = "Maximum Housing Expense Fraction", value = .28, min = 0, max = 1, step = .01),
       numericInput(inputId = "maxDebtExpenseFraction", label = "Maximum Debt Expense Fraction", value = .36, min = 0, max = 1, step = .01),
-      numericInput(inputId = "grossIncome", label = "Gross Income ($)", value = 220000, min = 0, step = 1),
-      numericInput(inputId = "nonHousingMonthlyDebtService", label = "Non-Housing Monthly Debt Service ($)", value = 2000, min = 0, step = 1),
-      numericInput(inputId = "currentMortgageBalance", label = "Current Mortgage Balance ($)", value = 250000, min = 0, step = 1),
-      numericInput(inputId = "cashSavings", label = "Cash Savings ($)", value = 125000, min = 0, step = 1),
-      numericInput(inputId = "currentHomeValue", label = "Current Home Value ($)", value = 400000, min = 0, step = 1),
+      numericInput(inputId = "grossIncome", label = "Gross Income ($)", value = 107000, min = 0, step = 1),
+      numericInput(inputId = "nonHousingMonthlyDebtService", label = "Non-Housing Monthly Debt Service ($)", value = 500, min = 0, step = 1),
+      numericInput(inputId = "currentMortgageBalance", label = "Current Mortgage Balance ($)", value = 242000, min = 0, step = 1),
+      numericInput(inputId = "cashSavings", label = "Cash Savings ($)", value = 50000, min = 0, step = 1),
+      numericInput(inputId = "currentHomeValue", label = "Current Home Value ($)", value = 412000, min = 0, step = 1),
       numericInput(inputId = "sellingCostsRate", label = "Home Selling Costs Rate (%)", value = 8.5, min = 0, max = 100, step = .01),
       numericInput(inputId = "buyingCostsRate", label = "Home Buying Costs Rate (%)", value = 2.5, min = 0, max = 100, step = .01),
       numericInput(inputId = "hoaFees", "HOA Association Fees", value = 0, min = 0, step = 1),
       numericInput(inputId = "propertyTaxRate", label = "Property Tax Rate (%)", value = 2, min = 0, max = 100, step = .01),
       numericInput(inputId = "insuranceRate", label = "Insurance Rate (%)", value = .1, min = 0, max = 100, step = .01),
-      numericInput(inputId = "mortgageInterestRate", label = "Mortgage Interest Rate (%)", value = 3.75, min = 0, max = 100, step = .01),
+      numericInput(inputId = "mortgageInterestRate", label = "Mortgage Interest Rate (%)", value = 5.25, min = 0, max = 100, step = .01),
       numericInput(inputId = "mortgageTerm", label = "Mortgage Term (Y)", value = 30, min = 0, max = 100, step = 1),
-      numericInput(inputId = "mortgagePoints", label = "Mortgage Points", value = 1, min = 0, max = 5, step = .1),
-      numericInput(inputId = "mortgageFees", label = "Mortgage Fees", value = 2000, min = 0, step = 1)
+      numericInput(inputId = "mortgagePoints", label = "Mortgage Points", value = 2, min = 0, max = 5, step = .1),
+      numericInput(inputId = "mortgageFees", label = "Mortgage Fees", value = 500, min = 0, step = 1)
     ),
     mainPanel(
       wellPanel(
