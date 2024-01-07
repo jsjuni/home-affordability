@@ -350,14 +350,14 @@ Suppose we are interested in a set of potential purchases, each with its own pri
 ```{r}
 houses <- tribble(
   ~id, ~p_h, ~hoa_fees, ~cash_reserve,
-  "100 Main St", 675000, 200, 00000,
-  "100 Main St", 675000, 200, 20000,
-  "100 Main St", 675000, 200, 40000,
-  "100 Main St", 675000, 200, 60000,
-  "200 Main St", 725000, 0, 00000,
-  "200 Main St", 725000, 0, 20000,
-  "200 Main St", 725000, 0, 40000,
-  "200 Main St", 725000, 0, 60000,
+  "100 Main St", 400000, 200, 00000,
+  "100 Main St", 400000, 200, 10000,
+  "100 Main St", 400000, 200, 20000,
+  "100 Main St", 400000, 200, 30000,
+  "200 Main St", 375000, 0, 00000,
+  "200 Main St", 375000, 0, 20000,
+  "200 Main St", 375000, 0, 40000,
+  "200 Main St", 375000, 0, 60000,
 )
 ```
 
@@ -387,7 +387,7 @@ colnames(A2) <- c("p_l", "p_t")
 ```
 
 ```{r echo=FALSE}
-B2 <- matrix(
+b2 <- matrix(
         c(
             houses$p_h * (1 + buying_costs_rate) - cash_available + houses$cash_reserve + mortgage_fees,
             houses$p_h * v_p(tax_rate + insurance_rate) + v_p(houses$hoa_fees)
@@ -397,7 +397,7 @@ B2 <- matrix(
 ```
 
 ```{r echo=FALSE}
-x2 <- solve(A2, B2)
+x2 <- solve(A2, b2)
 houses$p_l <- x2['p_l', ]
 houses$p_t <- x2['p_t', ]
 houses$p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -houses$p_l, 0, 0)
