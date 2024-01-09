@@ -220,6 +220,7 @@ $$ \begin{bmatrix}
             c_a - f_l \\ v_p(p_o - p_t)
         \end{pmatrix}
 $$
+If available cash is large relative to income, the solution may result in a negative loan principal. This situation occurs because a large down payment permits purchase of a house whose monthly tax and insurance payments alone exceed the monthly expense guidelines. The negative mortgage suggests a strategy of investing some portion of the available cash (thereby making it unavailable) and accounting for its returns as income.
 
 ```{r echo = FALSE}
 
@@ -234,8 +235,14 @@ guidelines <- mutate(guidelines,
 
 max_pt <- min(guidelines$housing_limit)
 
-v_p <- function(p)
-  pv(mortgage_interest_rate / 12, mortgage_term * 12, 0, p, 0)
+v_p <- partial(
+  pv,
+  r = !!mortgage_interest_rate / 12,
+  n = !!mortgage_term * 12,
+  fv = !!0,
+  ... =,
+  type = !!0
+)
 
 A <- matrix(c(
   mortgage_points - 1,  1 + buying_costs_rate,
@@ -387,7 +394,7 @@ colnames(A2) <- c("p_l", "p_t")
 ```
 
 ```{r echo=FALSE}
-b2 <- matrix(
+B2 <- matrix(
         c(
             houses$p_h * (1 + buying_costs_rate) - cash_available + houses$cash_reserve + mortgage_fees,
             houses$p_h * v_p(tax_rate + insurance_rate) + v_p(houses$hoa_fees)
@@ -397,7 +404,7 @@ b2 <- matrix(
 ```
 
 ```{r echo=FALSE}
-x2 <- solve(A2, b2)
+x2 <- solve(A2, B2)
 houses$p_l <- x2['p_l', ]
 houses$p_t <- x2['p_t', ]
 houses$p_pi <- pmt(mortgage_interest_rate / 12, mortgage_term * 12, -houses$p_l, 0, 0)
