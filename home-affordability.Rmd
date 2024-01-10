@@ -220,14 +220,14 @@ $$ \begin{bmatrix}
             c_a - f_l \\ v_p(p_o - p_t)
         \end{pmatrix}
 $$
-If available cash is large relative to income, the solution may result in a negative loan principal. This situation occurs because a large down payment permits purchase of a house whose monthly tax and insurance payments alone exceed the monthly expense guidelines. The negative mortgage suggests a strategy of investing some portion of the available cash (thereby making it unavailable) and accounting for its returns as income.
-
-In any realistic scenario, $c_a \ge c_l + c_b$, and therefore
-$$ p_h = p_l + c_a - c_l - c_b \ge p_l $$
 Note that this system is singular if and only if
 $$ 1 + r_b = ( r_l - 1 ) ( -v_p(r_t + r_i )) $$
 This clearly cannot occur if $r_b$, $r_t$, and $r_i$ are non-negative and $r_l \le 1$. For $r_l > 1$ it is possible in principle. In practice, however, $r_l \ll 1$. Otherwise the costs for mortgage points would approach or exceed the mortgage principal itself.
 
+If available cash is large relative to income, the solution may result in a negative loan principal. This situation occurs because a large down payment permits purchase of a house whose monthly tax and insurance payments alone exceed the monthly expense guidelines. The negative mortgage suggests a strategy of investing some portion of the available cash (thereby making it unavailable) and accounting for its returns as income.
+
+In any realistic scenario, $c_a \ge c_l + c_b$, and therefore
+$$ p_h = p_l + c_a - c_l - c_b \ge p_l $$
 ```{r echo = FALSE}
 
 gross_income <- sum(income$amount)
