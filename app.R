@@ -146,7 +146,14 @@ server <- function(input, output, session) {
     paste0("sale proceeds ", dollar(currentSaleProceeds()))
   })
   
-  cashAvailable <- reactive(currentSaleProceeds() + input$cashSavings)
+  cashAvailable <- reactive({
+    ca <- currentSaleProceeds() + input$cashSavings
+    validate(
+      need(ca > 0, "available cash is negative")
+    )
+    ca
+  })
+  
   output$cashAvailable <- renderText({
     paste0("cash available ", dollar(cashAvailable()))
   })
