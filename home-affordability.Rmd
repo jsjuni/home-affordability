@@ -213,7 +213,7 @@ knitr::kable(proceeds)
 ### Maximum Montly PITI
 
 ```{r echo = FALSE}
-gross_income <- sum(income$amount)
+gross_income <- sum(income$amount) / 12
 
 total_other_housing_debt_service <- sum(other_housing_debt_service$payment)
 total_other_debt_service <- sum(other_debt_service$payment)
@@ -221,7 +221,7 @@ total_other_debt_service <- sum(other_debt_service$payment)
 limits <- c(
   gross_income * guidelines$housing - total_other_housing_debt_service,
   gross_income * guidelines$debt - total_other_housing_debt_service - total_other_debt_service
-) / 12
+)
 
 max_pt <- min(limits)
 ```
