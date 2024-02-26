@@ -67,6 +67,7 @@ ui <- fluidPage(
       numericInput(inputId = "maxHousingExpenseFraction", label = "Maximum Housing Expense Fraction", value = .28, min = 0, max = 1, step = .01),
       numericInput(inputId = "maxDebtExpenseFraction", label = "Maximum Debt Expense Fraction", value = .36, min = 0, max = 1, step = .01),
       numericInput(inputId = "grossIncome", label = "Gross Income ($)", value = 107000, min = 0, step = 1),
+      numericInput(inputId = "otherHousingMonthlyDebtService", label = "Other Housing Monthly Debt Service ($)", value = 500, min = 0, step = 1),
       numericInput(inputId = "nonHousingMonthlyDebtService", label = "Non-Housing Monthly Debt Service ($)", value = 500, min = 0, step = 1),
       numericInput(inputId = "currentMortgageBalance", label = "Current Mortgage Balance ($)", value = 242000, min = 0, step = 1),
       numericInput(inputId = "cashSavings", label = "Cash Savings ($)", value = 50000, min = 0, step = 1),
@@ -95,6 +96,10 @@ ui <- fluidPage(
       wellPanel(
         titlePanel("Non-Housing Debt Service"),
         textOutput("nonHousingDebt")
+      ),
+      wellPanel(
+        titlePanel("Other Housing Debt Service"),
+        textOutput("otherHousingDebt")
       ),
       wellPanel(
         titlePanel("Monthly Housing Costs Per Guidelines"),
@@ -160,11 +165,15 @@ server <- function(input, output, session) {
   
   monthlyGrossIncome <- reactive(input$grossIncome / 12)
   maxPayment <- reactive(min(
-    input$maxHousingExpenseFraction * monthlyGrossIncome(),
-    input$maxDebtExpenseFraction * monthlyGrossIncome() - input$nonHousingMonthlyDebtService)
+    input$maxHousingExpenseFraction * monthlyGrossIncome() - input$otherHousingMonthlyDebtService,
+    input$maxDebtExpenseFraction * monthlyGrossIncome() - input$otherHousingMonthlyDebtService - input$nonHousingMonthlyDebtService)
   )
   output$monthlyIncome <- renderText({
     paste0("monthly income ", dollar(monthlyGrossIncome()))
+  })
+  
+  output$otherHousingDebt <- renderText({
+    paste0("monthly payment ", dollar(input$otherHousingMonthlyDebtService))
   })
   
   output$nonHousingDebt <- renderText({
@@ -176,11 +185,11 @@ server <- function(input, output, session) {
   })
   
   output$housingFraction <- renderText({
-    paste0("housing expense fraction ", sprintf("%.0f%%", maxPayment() / monthlyGrossIncome() * 100))
+    paste0("housing expense fraction ", sprintf("%.0f%%", (maxPayment() + input$otherHousingMonthlyDebtService) / monthlyGrossIncome() * 100))
   })
   
   output$debtFraction <- renderText({
-    paste0("debt expense fraction ", sprintf("%.0f%%", (maxPayment() + input$nonHousingMonthlyDebtService) / monthlyGrossIncome() * 100))
+    paste0("debt expense fraction ", sprintf("%.0f%%", (maxPayment() + input$otherHousingMonthlyDebtService + input$nonHousingMonthlyDebtService) / monthlyGrossIncome() * 100))
   })
   
   maxAffordable <- reactive(find_max_affordable(input$mortgagePoints / 100, input$buyingCostsRate / 100, input$mortgageInterestRate / 100,
